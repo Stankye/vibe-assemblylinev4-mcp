@@ -1,0 +1,54 @@
+{
+  "name": "assemblyline4-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for AssemblyLine 4 malware analysis platform",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "bin": {
+    "assemblyline4-mcp": "dist/src/index.js"
+  },
+  "files": [
+    "dist/src/**/*.js",
+    "dist/src/**/*.d.ts",
+    "dist/src/**/*.js.map",
+    "README.md",
+    "LICENSE",
+    ".env.example"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "start": "node dist/src/index.js",
+    "test": "npm run build && node dist/test/integration.js",
+    "test:e2e": "npm run build && node dist/test/e2e.js",
+    "bench": "npm run build && node dist/test/bench.js",
+    "ci:local": "act -W .github/workflows/ci.yml",
+    "e2e:local": "bash scripts/ci/run-local-e2e.sh",
+    "e2e:up": "bash scripts/ci/start-al4.sh",
+    "e2e:apikey": "bash scripts/ci/create-apikey.sh",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run clean && npm run build && node dist/test/integration.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "assemblyline",
+    "assemblyline4",
+    "malware-analysis",
+    "security",
+    "threat-intel"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

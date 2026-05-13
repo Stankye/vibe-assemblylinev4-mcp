@@ -1,0 +1,22 @@
+# Dependencies & build output
+node_modules/
+dist/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / tooling
+.vscode/
+.idea/
+.DS_Store
+.claude/
+
+# CI scratch
+.act/

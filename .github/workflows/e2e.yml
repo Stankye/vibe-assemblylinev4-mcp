@@ -1,0 +1,87 @@
+name: E2E (real Assemblyline 4)
+
+# This workflow brings up a real Assemblyline 4 appliance via docker-compose
+# and runs `test/e2e.ts` against it.  It is heavy (~10 GB of container images,
+# 8–15 min wall time) so it is *not* triggered by every PR.  Trigger it
+# manually, on the nightly schedule, or by adding the `run-e2e` label to a PR.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "27 5 * * *" # 05:27 UTC daily
+  pull_request:
+    types: [labeled, synchronize]
+
+jobs:
+  e2e:
+    name: Real AL4 smoke
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'run-e2e')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      AL4_ADMIN_USER: admin
+      AL4_ADMIN_PASSWORD: admin
+      AL4_URL: https://localhost
+      AL4_TLS_VERIFY: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          swap-storage: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Start Assemblyline 4 appliance
+        run: bash scripts/ci/start-al4.sh
+
+      - name: Mint API key
+        id: apikey
+        run: bash scripts/ci/create-apikey.sh
+
+      - name: Run E2E suite
+        env:
+          AL4_USERNAME: ${{ env.AL4_ADMIN_USER }}
+          AL4_APIKEY: ${{ steps.apikey.outputs.apikey }}
+        run: node dist/test/e2e.js
+
+      - name: Dump AL4 container state on failure
+        if: failure()
+        run: |
+          set +e
+          WORK="$RUNNER_TEMP/al4-appliance"
+          echo "── docker compose ps"
+          (cd "$WORK" && docker compose ps)
+          echo "── disk usage"
+          df -h
+          for svc in nginx ui_minimal dispatcher_minimal ingester_minimal \
+                     service_server_minimal elasticsearch_minimal redis minio; do
+            echo "── logs: $svc"
+            (cd "$WORK" && docker compose logs --tail=200 "$svc" 2>&1) || true
+          done
+
+      - name: Tear down
+        if: always()
+        run: |
+          WORK="$RUNNER_TEMP/al4-appliance"
+          if [[ -d "$WORK" ]]; then
+            (cd "$WORK" && docker compose down -v --remove-orphans) || true
+          fi

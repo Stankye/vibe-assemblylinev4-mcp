@@ -1,0 +1,11 @@
+# Default settings for `act` (https://github.com/nektos/act).
+# Use the medium-size runner image which has Node, npm, git and the basics.
+# `act` does not need to (and cannot easily) run the e2e workflow, so the
+# typical local invocations are:
+#
+#   act -W .github/workflows/ci.yml             # full CI workflow
+#   act -W .github/workflows/ci.yml -j build-and-test   # just the one job
+#   act pull_request -W .github/workflows/ci.yml         # simulate a PR event
+#
+-P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
+--container-architecture linux/amd64
